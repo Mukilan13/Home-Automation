@@ -1,130 +1,260 @@
+
 # Home Automation System
 
-A full-stack **Home Automation** project with a **Node.js + Express backend** and a **Vite-powered frontend**.  
-The system is designed to control and monitor smart devices through a REST API.
+A full-stack **Home Automation** project with a **Node.js + Express backend** running on a **Raspberry Pi** and a **Vite + React frontend**.  
+The system allows controlling smart devices (Bulb, Fan, TV, AC) over Wi-Fi using REST APIs.
 
 ---
 
 ## 📌 Project Structure
 
-    home-automation/
-    │
-    ├── Backend/        # Node.js + Express API
-    │   ├── routes/
-    │   ├── server.js
-    │   ├── package.json
-    │   └── .env        # optional
-    │
-    ├── Frontend/       # Frontend UI (Vite)
-    │   ├── src/
-    │   ├── package.json
-    │   └── vite.config.js
-    │
-    └── README.md
+home-automation/
+│
+├── Backend/ # Runs on Raspberry Pi
+│   ├── routes/
+│   │   └── devices.js
+│   ├── server.js
+│   ├── package.json
+│   └── .env # optional
+│
+├── Frontend/ # Runs on laptop / mobile browser
+│   ├── src/
+│   ├── package.json
+│   └── vite.config.js
+│
+└── README.md
 
 ---
 
 ## ⚙️ Prerequisites
 
-- Node.js v18 or higher  
+### For Raspberry Pi (Backend)
+- Raspberry Pi OS
+- Node.js **v18 or higher**
 - npm
+- Git
 
-Verify installation:
+Check installation:
 
-    node -v
-    npm -v
-
----
-
-## 📥 Clone the Repository
-
-    git clone <your-repo-url> home-automation
-    cd home-automation
+```sh
+node -v
+npm -v
+```
 
 ---
 
-## 🔧 Backend Setup (API)
+## 📥 Clone the Repository (ON RASPBERRY PI)
 
-### Install Dependencies
+```sh
+git clone <your-repo-url> home-automation
+cd home-automation
+```
 
-    cd Backend
-    npm install
+---
 
-### Environment Variables (Optional)
+## 🔧 Backend Setup (Raspberry Pi)
 
-Create a `.env` file inside the Backend folder:
+### Step 1: Go to Backend folder
 
-    PORT=5000
+```sh
+cd Backend
+```
 
-If not provided, the backend defaults to port **5000**.
+### Step 2: Install dependencies
 
-### Start the Backend Server
+```sh
+npm install
+```
 
-    npm start
+### Step 3: Environment variables (optional)
 
-- Backend binds to `0.0.0.0`
-- URL: http://localhost:5000
+Create `.env` file:
 
-### Health Check
+```env
+PORT=5000
+```
 
-    GET http://localhost:5000/ping
+If not created, default port **5000** is used.
+
+---
+
+### Step 4: Backend server code (`server.js`)
+
+```js
+import express from "express";
+import cors from "cors";
+import dotenv from "dotenv";
+import deviceRoutes from "./routes/devices.js";
+
+dotenv.config();
+
+const app = express();
+const PORT = process.env.PORT || 5000;
+
+app.use(cors());
+app.use(express.json());
+
+app.use("/api", deviceRoutes);
+
+// Health check
+app.get("/ping", (req, res) => {
+    res.json({
+        device: "raspberry-pi",
+        status: "online"
+    });
+});
+
+// IMPORTANT: Listen on all network interfaces
+app.listen(PORT, "0.0.0.0", () => {
+    console.log(`Backend running on port ${PORT}`);
+});
+```
+
+### Step 5: Sample routes file (`routes/devices.js`)
+
+```js
+import express from "express";
+
+const router = express.Router();
+
+router.post("/bulb/on", (req, res) => {
+    console.log("Bulb ON command received");
+    res.json({ status: "bulb on" });
+});
+
+router.post("/bulb/off", (req, res) => {
+    console.log("Bulb OFF command received");
+    res.json({ status: "bulb off" });
+});
+
+export default router;
+```
+
+### Step 6: Start backend on Raspberry Pi
+
+```sh
+npm start
+```
+
+Expected output:
+
+```text
+Backend running on port 5000
+```
+
+### Step 7: Test backend from another device
+
+From laptop / phone browser:
+
+```sh
+http://raspberrypi.local:5000/ping
+```
 
 Expected response:
 
-    {
-      "device": "raspberry-pi",
-      "status": "online"
-    }
+```json
+{
+    "device": "raspberry-pi",
+    "status": "online"
+}
+```
+
+`raspberrypi.local` works on any router using mDNS — no IP handling needed.
 
 ---
 
-## 🎨 Frontend Setup (UI)
+## 🎨 Frontend Setup (Laptop / Development Machine)
 
-### Install Dependencies
+### Step 1: Go to Frontend folder
 
-    cd ../Frontend
-    npm install
+```sh
+cd ../Frontend
+```
 
-### Start the Development Server
+### Step 2: Install dependencies
 
-    npm run dev
+```sh
+npm install
+```
 
-The frontend usually runs at:
+### Step 3: Start frontend
 
-    http://localhost:5173
+```sh
+npm run dev
+```
+
+Frontend runs at:
+
+```text
+http://localhost:5173
+```
 
 ---
 
-## 🔗 Frontend ↔ Backend Communication
+## 🔗 Frontend ↔ Backend Connection
 
-- Frontend communicates with the backend via `/api` routes
-- Example base URL:
+Backend Base URL (recommended):
 
-    http://localhost:5000/api
+```js
+const PI_BASE_URL = "http://raspberrypi.local:5000";
+```
 
-To change backend host or port:
-- Update the API base URL in frontend code, or
-- Configure a proxy in `vite.config.js`
+Example API call from React:
+
+```js
+fetch(`${PI_BASE_URL}/api/bulb/on`, { method: "POST" });
+```
+
+---
+
+## 🌐 Network Architecture
+
+```
+React App (Browser)
+                ↓ HTTP (Wi-Fi)
+Raspberry Pi (Node + Express)
+                ↓ HTTP
+Smart Devices (Bulb / Fan / TV / AC)
+```
+
+Backend must run on Raspberry Pi.
+
+Frontend runs anywhere but both must be on the same Wi-Fi network.
 
 ---
 
 ## 🛠️ Notes & Troubleshooting
 
-- If you see CORS errors, ensure the backend is running (CORS is already enabled).
-- If `nodemon` is missing, run:
-
-    node server.js
-
-- Backend binds to `0.0.0.0`, allowing access from other devices on the same LAN using the local IP address.
+- Backend must be started on Raspberry Pi (not your laptop).
+- Use `0.0.0.0` to allow LAN access.
+- If `.local` doesn’t work on Windows, install Bonjour.
+- If CORS errors appear, backend already has CORS enabled.
+- For production, consider running backend with `pm2`.
 
 ---
 
 ## ⚡ Quick Commands Summary
 
-    cd Backend && npm install
-    cd ../Frontend && npm install
+Raspberry Pi
 
-    cd Backend && npm start
-    cd Frontend && npm run dev
+```sh
+cd Backend
+npm install
+npm start
+```
+
+Frontend
+
+```sh
+cd Frontend
+npm install
+npm run dev
+```
 
 ---
+
+## ✅ Final Takeaway
+
+The React app does not send Wi-Fi signals — it sends HTTP requests over Wi-Fi. The Raspberry Pi acts as the central controller. Using the `.local` hostname (mDNS) makes the system router-independent.
+
+This README is ready to paste and use.
