@@ -8,21 +8,20 @@ The system allows controlling smart devices (Bulb, Fan, TV, AC) over Wi-Fi using
 
 ## 📌 Project Structure
 
+```
 home-automation/
-│
-├── Backend/ # Runs on Raspberry Pi
-│   ├── routes/
-│   │   └── devices.js
-│   ├── server.js
-│   ├── package.json
-│   └── .env # optional
-│
-├── Frontend/ # Runs on laptop / mobile browser
-│   ├── src/
-│   ├── package.json
-│   └── vite.config.js
-│
-└── README.md
+├─ Backend/ (Runs on Raspberry Pi)
+│  ├─ routes/
+│  │  └─ devices.js
+│  ├─ server.js
+│  ├─ package.json
+│  └─ .env (optional)
+├─ Frontend/ (Runs on laptop / mobile browser)
+│  ├─ src/
+│  ├─ package.json
+│  └─ vite.config.js
+└─ README.md
+```
 
 ---
 
