@@ -152,3 +152,12 @@ namespace ExcelToDB
         }
     }
 }
+
+
+CREATE TABLE ExcelData (
+    SheetName   NVARCHAR(100),
+    RowIndex    INT,
+    ColumnName  NVARCHAR(100),
+    Value       NVARCHAR(MAX)
+);
+
