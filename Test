@@ -1,3 +1,58 @@
+
+static void InsertRow(
+    SqlConnection conn,
+    string sheetName,
+    int rowIndex,
+    string columnName,
+    string value
+)
+{
+    using var cmd = new SqlCommand("dbo.InsertExcelData", conn);
+    cmd.CommandType = System.Data.CommandType.StoredProcedure;
+
+    cmd.Parameters.Add("@SheetName", System.Data.SqlDbType.NVarChar, 100)
+                  .Value = sheetName;
+
+    cmd.Parameters.Add("@RowIndex", System.Data.SqlDbType.Int)
+                  .Value = rowIndex;
+
+    cmd.Parameters.Add("@ColumnName", System.Data.SqlDbType.NVarChar, 100)
+                  .Value = columnName;
+
+    cmd.Parameters.Add("@Value", System.Data.SqlDbType.NVarChar)
+                  .Value = value ?? string.Empty;
+
+    cmd.ExecuteNonQuery();
+}
+
+
+
+CREATE PROCEDURE dbo.InsertExcelData
+(
+    @SheetName   NVARCHAR(100),
+    @RowIndex    INT,
+    @ColumnName  NVARCHAR(100),
+    @Value       NVARCHAR(MAX)
+)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    INSERT INTO ExcelData (SheetName, RowIndex, ColumnName, Value)
+    SELECT @SheetName, @RowIndex, @ColumnName, @Value
+    WHERE NOT EXISTS (
+        SELECT 1
+        FROM ExcelData
+        WHERE SheetName  = @SheetName
+          AND RowIndex   = @RowIndex
+          AND ColumnName = @ColumnName
+    );
+END;
+
+
+
+
+
 using System;
 using HexExcelLib;
 using Microsoft.Data.SqlClient;
