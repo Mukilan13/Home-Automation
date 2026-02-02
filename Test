@@ -1,3 +1,73 @@
+using System;
+using HexExcelLib;
+using Microsoft.Data.SqlClient;
+
+class Program
+{
+    static void Main()
+    {
+        string excelPath = @"\\SharedServer\SharedFolder\100_unique_sample_data.xlsx";
+        string connectionString =
+            "Server=YOUR_SERVER;Database=YOUR_DB;Trusted_Connection=True;";
+
+        using var workbook = new ExcelWorkbook(excelPath);
+        using var sqlConn = new SqlConnection(connectionString);
+        sqlConn.Open();
+
+        foreach (var sheet in workbook.Sheets)
+        {
+            string sheetName = sheet.Name;
+
+            // First row is header
+            var headerRow = sheet.Rows[0];
+
+            for (int rowIndex = 1; rowIndex < sheet.Rows.Count; rowIndex++)
+            {
+                var dataRow = sheet.Rows[rowIndex];
+                int excelRowIndex = rowIndex; // 1-based (excluding header)
+
+                for (int colIndex = 0; colIndex < headerRow.Cells.Count; colIndex++)
+                {
+                    string columnName = headerRow.Cells[colIndex]?.Value?.ToString();
+                    string value = dataRow.Cells[colIndex]?.Value?.ToString();
+
+                    InsertRow(
+                        sqlConn,
+                        sheetName,
+                        excelRowIndex,
+                        columnName,
+                        value
+                    );
+                }
+            }
+        }
+
+        Console.WriteLine("✅ Excel data inserted successfully.");
+    }
+
+    static void InsertRow(
+        SqlConnection conn,
+        string sheetName,
+        int rowIndex,
+        string columnName,
+        string value
+    )
+    {
+        string sql = @"
+            INSERT INTO ExcelData
+            (SheetName, RowIndex, ColumnName, Value)
+            VALUES
+            (@SheetName, @RowIndex, @ColumnName, @Value)";
+
+        using var cmd = new SqlCommand(sql, conn);
+        cmd.Parameters.AddWithValue("@SheetName", sheetName);
+        cmd.Parameters.AddWithValue("@RowIndex", rowIndex);
+        cmd.Parameters.AddWithValue("@ColumnName", columnName);
+        cmd.Parameters.AddWithValue("@Value", value ?? "");
+
+        cmd.ExecuteNonQuery();
+    }
+}
 
 
 using System;
