@@ -1,32 +1,40 @@
 import { useState } from "react";
 import fan from "../assets/fan.png";
-import ac from "../assets/ac.png";
-import tv from "../assets/tv.png";
 import bulb from "../assets/bulb.webp";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
 
 const Devices = () => {
   const [devices, setDevices] = useState([
-    { id: 0, name: "Living Room Bulb", status: true, image: bulb, function: toggleBulb },
+    { id: 0, name: "Living Room Bulb", status: false, image: bulb },
     { id: 1, name: "Living Room Fan", status: false, image: fan },
-    { id: 2, name: "Living Room Tv", status: false, image: tv },
-    { id: 3, name: "Living Room Ac", status: false, image: ac },
-    // Add more devices as needed
   ]);
 
-  const toggleSwitch = (id) => {
+  const toggleSwitch = async (id) => {
+    const currentDevice = devices.find((d) => d.id === id);
+    const newAction = currentDevice.status ? "off" : "on";
+
+    if (currentDevice.name === "Living Room Bulb") {
+      await toggleBulb(newAction);
+    }
+
     setDevices((prevDevices) =>
       prevDevices.map((device) =>
-        device.id === id ? { ...device, status: !device.status } : device
-      )
+        device.id === id ? { ...device, status: !device.status } : device,
+      ),
     );
-    devices[id].function();
   };
 
-  function toggleBulb() {
-    console.log('====================================');
-    console.log("Bulb turn on function called");
-    console.log('====================================');
+  async function toggleBulb(action) {
+    try {
+      const response = await fetch(`http://localhost:5000/api/bulb/${action}`, {
+        method: "POST",
+      });
+
+      const data = await response.json();
+      console.log("Server Response:", data);
+    } catch (error) {
+      console.error("Error sending bulb command:", error);
+    }
   }
 
   return (
